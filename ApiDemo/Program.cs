@@ -1,5 +1,6 @@
 using ApiDemo.Extension;
 using Microsoft.EntityFrameworkCore;
+using Persistence;
 using Persistencia;
 using Persistencia.Data;
 
@@ -29,6 +30,23 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+	var services = scope.ServiceProvider;
+	var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+	try
+	{
+		var context = services.GetRequiredService<ApiDemoContext>();
+		await context.Database.MigrateAsync();
+        await JwtAppContextSeed.SeedAsync(context, loggerFactory);
+	}
+	catch (Exception ex)
+	{
+		var _logger = loggerFactory.CreateLogger<Program>();
+		_logger.LogError(ex, "Ocurrio un error durante la migracion");
+	}
 }
 
 app.UseCors("CorsPolicy");
